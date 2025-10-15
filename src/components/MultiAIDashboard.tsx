@@ -3,40 +3,77 @@ import { useState, useRef, useEffect } from "react";
 import { Send, User, Sparkles, Zap, Brain, LogOut, Code, Copy, Download, Trash2, Settings, Moon, Sun, Mic, StopCircle, Volume2, Maximize2, Minimize2, History, MessageSquare, Palette, Type, Layout, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Define types
+interface Message {
+  role: string;
+  content: string;
+  codeBlocks?: CodeBlock[];
+  timestamp?: string;
+}
+
+interface CodeBlock {
+  language: string;
+  code: string;
+}
+
+interface LoadingState {
+  gemini: boolean;
+  perplexity: boolean;
+  chatgpt: boolean;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: { [key: string]: Message[] };
+  timestamp: string;
+  lastUpdated: string;
+  messageCount: number;
+  category: string;
+  tags: string[];
+}
+
+interface UserPreferences {
+  bgColor: string;
+  font: string;
+  layout: string;
+  darkMode: boolean;
+}
+
 export default function MultiAIDashboard() {
   const router = useRouter();
-  const [messages, setMessages] = useState({
+  const [messages, setMessages] = useState<{ [key: string]: Message[] }>({
     gemini: [],
     perplexity: [],
     chatgpt: [],
   });
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState({
+  const [input, setInput] = useState<string>("");
+  const [loading, setLoading] = useState<LoadingState>({
     gemini: false,
     perplexity: false,
     chatgpt: false,
   });
-  const [darkMode, setDarkMode] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [fontSize, setFontSize] = useState("medium");
-  const [expandedPanel, setExpandedPanel] = useState(null);
-  const [showChatHistory, setShowChatHistory] = useState(false);
-  const [chatSessions, setChatSessions] = useState([]);
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [backgroundColor, setBackgroundColor] = useState("default");
-  const [layout, setLayout] = useState("grid");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [fontSize, setFontSize] = useState<string>("medium");
+  const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
+  const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [backgroundColor, setBackgroundColor] = useState<string>("default");
+  const [layout, setLayout] = useState<string>("grid");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   
   const chatRefs = {
-    gemini: useRef(null),
-    perplexity: useRef(null),
-    chatgpt: useRef(null),
+    gemini: useRef<HTMLDivElement>(null),
+    perplexity: useRef<HTMLDivElement>(null),
+    chatgpt: useRef<HTMLDivElement>(null),
   };
 
   // Background themes
-  const backgroundThemes = {
+  const backgroundThemes: { [key: string]: string } = {
     default: darkMode 
       ? 'bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900' 
       : 'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100',
@@ -70,7 +107,7 @@ export default function MultiAIDashboard() {
     const savedSessions = localStorage.getItem("chatSessions");
     if (savedSessions) {
       try {
-        const sessions = JSON.parse(savedSessions);
+        const sessions: ChatSession[] = JSON.parse(savedSessions);
         // Ensure each session has required properties
         const validatedSessions = sessions.map(session => ({
           id: session.id || `session_${Date.now()}`,
@@ -100,7 +137,7 @@ export default function MultiAIDashboard() {
     const preferences = localStorage.getItem("userPreferences");
     if (preferences) {
       try {
-        const { bgColor, font, layout: savedLayout } = JSON.parse(preferences);
+        const { bgColor, font, layout: savedLayout }: UserPreferences = JSON.parse(preferences);
         setBackgroundColor(bgColor || "default");
         setFontSize(font || "medium");
         setLayout(savedLayout || "grid");
@@ -112,7 +149,7 @@ export default function MultiAIDashboard() {
 
   // Save preferences to localStorage
   useEffect(() => {
-    const preferences = {
+    const preferences: UserPreferences = {
       bgColor: backgroundColor,
       font: fontSize,
       layout: layout,
@@ -149,7 +186,7 @@ export default function MultiAIDashboard() {
           : firstUserMessage.content)
       : `Chat ${new Date().toLocaleString()}`;
 
-    const session = {
+    const session: ChatSession = {
       id: sessionId,
       title: sessionTitle,
       messages: messages,
@@ -161,7 +198,7 @@ export default function MultiAIDashboard() {
     };
 
     const existingSessionIndex = chatSessions.findIndex(s => s.id === sessionId);
-    let updatedSessions;
+    let updatedSessions: ChatSession[];
 
     if (existingSessionIndex >= 0) {
       // Update existing session
@@ -178,7 +215,7 @@ export default function MultiAIDashboard() {
   };
 
   // Load session from history
-  const loadSession = (sessionId) => {
+  const loadSession = (sessionId: string) => {
     const session = chatSessions.find(s => s.id === sessionId);
     if (session) {
       setMessages(session.messages);
@@ -204,7 +241,7 @@ export default function MultiAIDashboard() {
   };
 
   // Delete chat session
-  const deleteSession = (sessionId, e) => {
+  const deleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm("Are you sure you want to delete this chat session?")) {
       const updatedSessions = chatSessions.filter(s => s.id !== sessionId);
@@ -254,7 +291,7 @@ export default function MultiAIDashboard() {
   // Get session statistics
   const getSessionStats = () => {
     const totalMessages = chatSessions.reduce((sum, session) => sum + (session.messageCount || 0), 0);
-    const categoriesCount = {};
+    const categoriesCount: { [key: string]: number } = {};
     
     chatSessions.forEach(session => {
       const category = session.category || "recent";
@@ -284,15 +321,15 @@ export default function MultiAIDashboard() {
   };
 
   // 📋 Copy to Clipboard
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
   };
 
   // 💾 Download Chat History
-  const downloadChatHistory = (provider) => {
+  const downloadChatHistory = (provider: string) => {
     const chatHistory = messages[provider]
-      .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}${msg.code ? '\n\nCODE:\n' + msg.code : ''}`)
+      .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}${msg.codeBlocks ? '\n\nCODE:\n' + msg.codeBlocks.map(cb => cb.code).join('\n\n') : ''}`)
       .join("\n\n");
     
     const blob = new Blob([chatHistory], { type: "text/plain" });
@@ -304,7 +341,7 @@ export default function MultiAIDashboard() {
   };
 
   // 🗑️ Clear Chat
-  const clearChat = (provider) => {
+  const clearChat = (provider: string) => {
     if (confirm(`Clear ${provider} chat history?`)) {
       setMessages((prev) => ({
         ...prev,
@@ -326,7 +363,7 @@ export default function MultiAIDashboard() {
   };
 
   // 🔊 Text to Speech
-  const speakText = (text) => {
+  const speakText = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.9;
     utterance.pitch = 1;
@@ -334,16 +371,16 @@ export default function MultiAIDashboard() {
   };
 
   // Format API response for better readability
-  const formatResponse = (content) => {
+  const formatResponse = (content: string) => {
     if (!content) return { explanation: "", codeBlocks: [] };
 
     // Remove extra spaces and normalize line breaks
     let cleanContent = content.replace(/\n\s*\n/g, '\n\n').trim();
     
     // Extract code blocks
-    const codeBlocks = [];
+    const codeBlocks: CodeBlock[] = [];
     let explanation = cleanContent.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
-      const codeBlock = {
+      const codeBlock: CodeBlock = {
         language: lang || 'text',
         code: code.trim()
       };
@@ -366,7 +403,7 @@ export default function MultiAIDashboard() {
   };
 
   // ✉️ Send to specific AI
-  const sendToAI = async (provider, text) => {
+  const sendToAI = async (provider: string, text: string) => {
     setLoading((prev) => ({ ...prev, [provider]: true }));
 
     try {
@@ -404,7 +441,7 @@ export default function MultiAIDashboard() {
           ...prev[provider],
           { 
             role: "bot", 
-            content: `Error: ${error.message}`,
+            content: `Error: ${(error as Error).message}`,
             timestamp: new Date().toLocaleTimeString(),
           },
         ],
@@ -418,7 +455,7 @@ export default function MultiAIDashboard() {
   const sendToAll = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { 
+    const userMessage: Message = { 
       role: "user", 
       content: input,
       timestamp: new Date().toLocaleTimeString(),
@@ -438,26 +475,35 @@ export default function MultiAIDashboard() {
     ]);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendToAll();
     }
   };
 
-  const fontSizes = {
+  const fontSizes: { [key: string]: string } = {
     small: "text-xs",
     medium: "text-sm",
     large: "text-base",
   };
 
   // Toggle panel expansion
-  const togglePanel = (provider) => {
+  const togglePanel = (provider: string) => {
     setExpandedPanel(expandedPanel === provider ? null : provider);
   };
 
-  // 💬 Chat Section
-  const ChatSection = ({
+  // 💬 Chat Section Component
+  interface ChatSectionProps {
+    title: string;
+    messages: Message[];
+    loading: boolean;
+    gradient: string;
+    icon: React.ComponentType<any>;
+    provider: string;
+  }
+
+  const ChatSection: React.FC<ChatSectionProps> = ({
     title,
     messages,
     loading,
@@ -509,7 +555,7 @@ export default function MultiAIDashboard() {
       </div>
 
       <div 
-        ref={chatRefs[provider]}
+        ref={chatRefs[provider as keyof typeof chatRefs]}
         className="flex-1 overflow-y-auto p-4 space-y-4 leading-relaxed custom-scrollbar"
       >
         {messages.length === 0 && (

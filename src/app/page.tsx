@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { Sparkles, Brain, Zap, Bot, MessageSquare, Shield, Rocket } from "lucide-react";
 
 export default function LandingPage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+  // ✅ FIX: explicitly type hoveredCard as number | null
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   const aiPlatforms = [
     { name: "Gemini", color: "from-blue-400 to-cyan-400", icon: Brain },
@@ -64,7 +65,10 @@ export default function LandingPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-500 rounded-full blur-xl opacity-60 animate-pulse"></div>
             <div className="relative w-full h-full bg-gradient-to-br from-purple-400 via-blue-400 to-cyan-400 rounded-full flex items-center justify-center shadow-2xl">
               <div className="absolute inset-4 bg-gray-900 rounded-full"></div>
-              <Bot className="w-16 h-16 text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-cyan-300 relative z-10" style={{ filter: "drop-shadow(0 0 20px rgba(139, 92, 246, 0.5))" }} />
+              <Bot
+                className="w-16 h-16 text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-cyan-300 relative z-10"
+                style={{ filter: "drop-shadow(0 0 20px rgba(139, 92, 246, 0.5))" }}
+              />
             </div>
           </motion.div>
 
@@ -92,7 +96,19 @@ export default function LandingPage() {
             transition={{ delay: 0.5 }}
             className="text-lg text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed"
           >
-            Experience the future of AI interaction. Compare responses from <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 font-semibold">Gemini</span>, <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 font-semibold">ChatGPT</span>, and <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-semibold">Perplexity</span> in one unified dashboard. Powered by Web3 for unmatched security and decentralization.
+            Experience the future of AI interaction. Compare responses from{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 font-semibold">
+              Gemini
+            </span>
+            ,{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 font-semibold">
+              ChatGPT
+            </span>
+            , and{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-semibold">
+              Perplexity
+            </span>{" "}
+            in one unified dashboard. Powered by Web3 for unmatched security and decentralization.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -105,7 +121,7 @@ export default function LandingPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(139, 92, 246, 0.5)" }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => window.location.href = '/login'}
+              onClick={() => (window.location.href = "/login")}
               className="group px-10 py-4 rounded-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold shadow-xl relative overflow-hidden"
             >
               <span className="relative z-10">Login</span>
@@ -115,7 +131,7 @@ export default function LandingPage() {
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => window.location.href = '/signup'}
+              onClick={() => (window.location.href = "/signup")}
               className="px-10 py-4 rounded-full border-2 border-purple-400/50 text-white font-semibold hover:border-purple-400 transition-all shadow-xl backdrop-blur-sm"
             >
               Sign Up
@@ -134,9 +150,19 @@ export default function LandingPage() {
                 onHoverEnd={() => setHoveredCard(null)}
                 className="relative group"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${platform.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity`}></div>
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${platform.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity`}
+                ></div>
                 <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:border-gray-600 transition-all">
-                  <platform.icon className={`w-12 h-12 mb-4 mx-auto text-transparent bg-clip-text bg-gradient-to-br ${platform.color}`} style={{ filter: hoveredCard === index ? "drop-shadow(0 0 10px rgba(139, 92, 246, 0.5))" : "none" }} />
+                  <platform.icon
+                    className={`w-12 h-12 mb-4 mx-auto text-transparent bg-clip-text bg-gradient-to-br ${platform.color}`}
+                    style={{
+                      filter:
+                        hoveredCard === index
+                          ? "drop-shadow(0 0 10px rgba(139, 92, 246, 0.5))"
+                          : "none"
+                    }}
+                  />
                   <h3 className="text-xl font-semibold text-white mb-2">{platform.name}</h3>
                   <p className="text-gray-400 text-sm">Advanced AI model</p>
                 </div>
