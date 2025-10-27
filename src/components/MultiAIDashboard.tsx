@@ -1,7 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { Send, User, Sparkles, Zap, Brain, LogOut, Code, Copy, Download, Trash2, Settings, Moon, Sun, Mic, StopCircle, Volume2, Maximize2, Minimize2, History, MessageSquare, Palette, Type, Layout, Search, X } from "lucide-react";
+import { Send, User, Sparkles, Zap, Brain, LogOut, Code, Copy, Download, Trash2, Settings, Moon, Sun, Mic, StopCircle, Volume2, Maximize2, Minimize2, History, MessageSquare, Palette, Type, Layout, Search, X, Plus, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import "./dashboard.css";
 
 // Define types
 interface Message {
@@ -31,6 +32,7 @@ interface ChatSession {
   messageCount: number;
   category: string;
   tags: string[];
+  userId: string;
 }
 
 interface UserPreferences {
@@ -38,10 +40,19 @@ interface UserPreferences {
   font: string;
   layout: string;
   darkMode: boolean;
+  userId: string;
+}
+
+interface CurrentUser {
+  id: string;
+  email: string;
+  name: string;
+  loginTime: string;
 }
 
 export default function MultiAIDashboard() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [messages, setMessages] = useState<{ [key: string]: Message[] }>({
     gemini: [],
     perplexity: [],
@@ -53,7 +64,7 @@ export default function MultiAIDashboard() {
     perplexity: false,
     chatgpt: false,
   });
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [fontSize, setFontSize] = useState<string>("medium");
@@ -65,6 +76,7 @@ export default function MultiAIDashboard() {
   const [layout, setLayout] = useState<string>("grid");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [showProfileMenu, setShowProfileMenu] = useState<boolean>(false);
   
   const chatRefs = {
     gemini: useRef<HTMLDivElement>(null),
@@ -72,43 +84,56 @@ export default function MultiAIDashboard() {
     chatgpt: useRef<HTMLDivElement>(null),
   };
 
-  // Background themes
-  const backgroundThemes: { [key: string]: string } = {
-    default: darkMode 
-      ? 'bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900' 
-      : 'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100',
-    professional: darkMode 
-      ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800'
-      : 'bg-gradient-to-br from-gray-100 via-blue-50 to-gray-200',
-    nature: darkMode
-      ? 'bg-gradient-to-br from-green-900 via-emerald-800 to-teal-900'
-      : 'bg-gradient-to-br from-green-50 via-emerald-100 to-teal-100',
-    ocean: darkMode
-      ? 'bg-gradient-to-br from-blue-900 via-cyan-800 to-sky-900'
-      : 'bg-gradient-to-br from-blue-50 via-cyan-100 to-sky-100',
-    sunset: darkMode
-      ? 'bg-gradient-to-br from-orange-900 via-red-800 to-purple-900'
-      : 'bg-gradient-to-br from-orange-50 via-red-100 to-purple-100',
-  };
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Categories for organizing chats
+  // Categories
   const categories = [
-    { id: "all", name: "All Chats", count: 0 },
-    { id: "recent", name: "Recent", count: 0 },
-    { id: "programming", name: "Programming", count: 0 },
-    { id: "research", name: "Research", count: 0 },
-    { id: "creative", name: "Creative", count: 0 },
-    { id: "business", name: "Business", count: 0 },
-    { id: "education", name: "Education", count: 0 }
+    { id: "all", name: "All Chats", icon: "📚" },
+    { id: "recent", name: "Recent", icon: "🕐" },
+    { id: "programming", name: "Programming", icon: "💻" },
+    { id: "research", name: "Research", icon: "🔬" },
+    { id: "creative", name: "Creative", icon: "🎨" },
+    { id: "business", name: "Business", icon: "💼" },
   ];
 
-  // Load chat sessions from localStorage on component mount
+  // Check authentication and load user-specific data
   useEffect(() => {
-    const savedSessions = localStorage.getItem("chatSessions");
+    const userData = localStorage.getItem("currentUser");
+    if (!userData) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const user: CurrentUser = JSON.parse(userData);
+      setCurrentUser(user);
+      loadUserData(user.id);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      router.push("/login");
+    }
+  }, [router]);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const loadUserData = (userId: string) => {
+    // Load user-specific chat sessions
+    const savedSessions = localStorage.getItem(`chatSessions_${userId}`);
     if (savedSessions) {
       try {
         const sessions: ChatSession[] = JSON.parse(savedSessions);
-        // Ensure each session has required properties
         const validatedSessions = sessions.map(session => ({
           id: session.id || `session_${Date.now()}`,
           title: session.title || "Untitled Chat",
@@ -117,49 +142,62 @@ export default function MultiAIDashboard() {
           lastUpdated: session.lastUpdated || new Date().toISOString(),
           messageCount: session.messageCount || 0,
           category: session.category || "recent",
-          tags: session.tags || [] // Ensure tags array exists
+          tags: session.tags || [],
+          userId: session.userId || userId
         }));
         setChatSessions(validatedSessions);
         
-        // Load the latest session if available
         if (validatedSessions.length > 0) {
           const latestSession = validatedSessions[validatedSessions.length - 1];
           setCurrentSessionId(latestSession.id);
           setMessages(latestSession.messages);
+        } else {
+          // New user - start fresh
+          setMessages({ gemini: [], perplexity: [], chatgpt: [] });
+          setCurrentSessionId(`session_${Date.now()}`);
         }
       } catch (error) {
         console.error("Error loading chat sessions:", error);
         setChatSessions([]);
       }
+    } else {
+      // New user - no existing data
+      setChatSessions([]);
+      setMessages({ gemini: [], perplexity: [], chatgpt: [] });
+      setCurrentSessionId(`session_${Date.now()}`);
     }
 
-    // Load user preferences
-    const preferences = localStorage.getItem("userPreferences");
+    // Load user-specific preferences
+    const preferences = localStorage.getItem(`userPreferences_${userId}`);
     if (preferences) {
       try {
-        const { bgColor, font, layout: savedLayout }: UserPreferences = JSON.parse(preferences);
+        const { bgColor, font, layout: savedLayout, darkMode: savedDarkMode }: UserPreferences = JSON.parse(preferences);
         setBackgroundColor(bgColor || "default");
         setFontSize(font || "medium");
         setLayout(savedLayout || "grid");
+        setDarkMode(savedDarkMode || false);
       } catch (error) {
         console.error("Error loading preferences:", error);
       }
     }
-  }, []);
+  };
 
-  // Save preferences to localStorage
   useEffect(() => {
+    if (!currentUser) return;
+
     const preferences: UserPreferences = {
       bgColor: backgroundColor,
       font: fontSize,
       layout: layout,
-      darkMode: darkMode
+      darkMode: darkMode,
+      userId: currentUser.id
     };
-    localStorage.setItem("userPreferences", JSON.stringify(preferences));
-  }, [backgroundColor, fontSize, layout, darkMode]);
+    localStorage.setItem(`userPreferences_${currentUser.id}`, JSON.stringify(preferences));
+  }, [backgroundColor, fontSize, layout, darkMode, currentUser]);
 
-  // Auto-save current session when messages change
   useEffect(() => {
+    if (!currentUser) return;
+
     if (currentSessionId && (messages.gemini.length > 0 || messages.perplexity.length > 0 || messages.chatgpt.length > 0)) {
       const autoSave = setTimeout(() => {
         saveToHistory();
@@ -167,10 +205,11 @@ export default function MultiAIDashboard() {
 
       return () => clearTimeout(autoSave);
     }
-  }, [messages, currentSessionId]);
+  }, [messages, currentSessionId, currentUser]);
 
-  // Save current session to chat history
   const saveToHistory = () => {
+    if (!currentUser) return;
+    
     if (messages.gemini.length === 0 && messages.perplexity.length === 0 && messages.chatgpt.length === 0) {
       return;
     }
@@ -194,27 +233,25 @@ export default function MultiAIDashboard() {
       lastUpdated: new Date().toISOString(),
       messageCount: messages.gemini.length + messages.perplexity.length + messages.chatgpt.length,
       category: "recent",
-      tags: []
+      tags: [],
+      userId: currentUser.id
     };
 
     const existingSessionIndex = chatSessions.findIndex(s => s.id === sessionId);
     let updatedSessions: ChatSession[];
 
     if (existingSessionIndex >= 0) {
-      // Update existing session
       updatedSessions = [...chatSessions];
       updatedSessions[existingSessionIndex] = session;
     } else {
-      // Add new session
       updatedSessions = [...chatSessions, session];
     }
     
     setChatSessions(updatedSessions);
     setCurrentSessionId(sessionId);
-    localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
+    localStorage.setItem(`chatSessions_${currentUser.id}`, JSON.stringify(updatedSessions));
   };
 
-  // Load session from history
   const loadSession = (sessionId: string) => {
     const session = chatSessions.find(s => s.id === sessionId);
     if (session) {
@@ -225,7 +262,6 @@ export default function MultiAIDashboard() {
     }
   };
 
-  // Start new chat session
   const startNewChat = () => {
     if (messages.gemini.length > 0 || messages.perplexity.length > 0 || messages.chatgpt.length > 0) {
       saveToHistory();
@@ -240,13 +276,14 @@ export default function MultiAIDashboard() {
     setExpandedPanel(null);
   };
 
-  // Delete chat session
   const deleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm("Are you sure you want to delete this chat session?")) {
       const updatedSessions = chatSessions.filter(s => s.id !== sessionId);
       setChatSessions(updatedSessions);
-      localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
+      if (currentUser) {
+        localStorage.setItem(`chatSessions_${currentUser.id}`, JSON.stringify(updatedSessions));
+      }
       
       if (sessionId === currentSessionId) {
         startNewChat();
@@ -254,19 +291,20 @@ export default function MultiAIDashboard() {
     }
   };
 
-  // Clear all history
   const clearAllHistory = () => {
-    if (confirm("Are you sure you want to clear ALL chat history? This action cannot be undone.")) {
+    if (confirm("Are you sure you want to clear ALL chat history?")) {
       setChatSessions([]);
-      localStorage.removeItem("chatSessions");
+      if (currentUser) {
+        localStorage.removeItem(`chatSessions_${currentUser.id}`);
+      }
       startNewChat();
     }
   };
 
-  // Export all chat history
   const exportAllChats = () => {
     const exportData = {
       exportedAt: new Date().toISOString(),
+      user: currentUser?.email,
       totalSessions: chatSessions.length,
       sessions: chatSessions
     };
@@ -275,11 +313,10 @@ export default function MultiAIDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ai-chat-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `ai-chat-backup-${currentUser?.email}-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
   };
 
-  // Filter sessions based on search and category
   const filteredSessions = chatSessions.filter(session => {
     const sessionTags = session.tags || [];
     const matchesSearch = session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -288,22 +325,6 @@ export default function MultiAIDashboard() {
     return matchesSearch && matchesCategory;
   });
 
-  // Get session statistics
-  const getSessionStats = () => {
-    const totalMessages = chatSessions.reduce((sum, session) => sum + (session.messageCount || 0), 0);
-    const categoriesCount: { [key: string]: number } = {};
-    
-    chatSessions.forEach(session => {
-      const category = session.category || "recent";
-      categoriesCount[category] = (categoriesCount[category] || 0) + 1;
-    });
-
-    return { totalMessages, categoriesCount };
-  };
-
-  const sessionStats = getSessionStats();
-
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     Object.values(chatRefs).forEach(ref => {
       if (ref.current) {
@@ -312,21 +333,18 @@ export default function MultiAIDashboard() {
     });
   }, [messages]);
 
-  // 🚪 Logout
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {
-      localStorage.removeItem("user");
+      localStorage.removeItem("currentUser");
       router.push("/login");
     }
   };
 
-  // 📋 Copy to Clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
   };
 
-  // 💾 Download Chat History
   const downloadChatHistory = (provider: string) => {
     const chatHistory = messages[provider]
       .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}${msg.codeBlocks ? '\n\nCODE:\n' + msg.codeBlocks.map(cb => cb.code).join('\n\n') : ''}`)
@@ -340,7 +358,6 @@ export default function MultiAIDashboard() {
     a.click();
   };
 
-  // 🗑️ Clear Chat
   const clearChat = (provider: string) => {
     if (confirm(`Clear ${provider} chat history?`)) {
       setMessages((prev) => ({
@@ -350,11 +367,9 @@ export default function MultiAIDashboard() {
     }
   };
 
-  // 🎤 Voice Input (simulated)
   const toggleRecording = () => {
     setIsRecording(!isRecording);
     if (!isRecording) {
-      // Simulate voice recording
       setTimeout(() => {
         setInput("Sample voice input: Tell me about AI");
         setIsRecording(false);
@@ -362,7 +377,6 @@ export default function MultiAIDashboard() {
     }
   };
 
-  // 🔊 Text to Speech
   const speakText = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.9;
@@ -370,14 +384,11 @@ export default function MultiAIDashboard() {
     window.speechSynthesis.speak(utterance);
   };
 
-  // Format API response for better readability
   const formatResponse = (content: string) => {
     if (!content) return { explanation: "", codeBlocks: [] };
 
-    // Remove extra spaces and normalize line breaks
     let cleanContent = content.replace(/\n\s*\n/g, '\n\n').trim();
     
-    // Extract code blocks
     const codeBlocks: CodeBlock[] = [];
     let explanation = cleanContent.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
       const codeBlock: CodeBlock = {
@@ -388,12 +399,11 @@ export default function MultiAIDashboard() {
       return `\n\n[CODE_BLOCK_${codeBlocks.length - 1}]\n\n`;
     });
 
-    // Clean up explanation
     explanation = explanation
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove markdown bold
-      .replace(/\*(.*?)\*/g, '$1')     // Remove markdown italic
-      .replace(/#{1,6}\s?/g, '')       // Remove markdown headers
-      .replace(/\n{3,}/g, '\n\n')      // Limit consecutive newlines
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/#{1,6}\s?/g, '')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
 
     return {
@@ -402,7 +412,6 @@ export default function MultiAIDashboard() {
     };
   };
 
-  // ✉️ Send to specific AI
   const sendToAI = async (provider: string, text: string) => {
     setLoading((prev) => ({ ...prev, [provider]: true }));
 
@@ -451,7 +460,6 @@ export default function MultiAIDashboard() {
     setLoading((prev) => ({ ...prev, [provider]: false }));
   };
 
-  // 🧠 Send to All
   const sendToAll = async () => {
     if (!input.trim()) return;
 
@@ -482,18 +490,10 @@ export default function MultiAIDashboard() {
     }
   };
 
-  const fontSizes: { [key: string]: string } = {
-    small: "text-xs",
-    medium: "text-sm",
-    large: "text-base",
-  };
-
-  // Toggle panel expansion
   const togglePanel = (provider: string) => {
     setExpandedPanel(expandedPanel === provider ? null : provider);
   };
 
-  // 💬 Chat Section Component
   interface ChatSectionProps {
     title: string;
     messages: Message[];
@@ -511,144 +511,99 @@ export default function MultiAIDashboard() {
     icon: Icon,
     provider,
   }) => (
-    <div className={`flex-1 flex flex-col bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all ${
-      expandedPanel && expandedPanel !== provider ? 'hidden' : ''
-    } ${expandedPanel === provider ? 'col-span-3' : ''}`}>
-      <div className={`bg-gradient-to-r ${gradient} p-4 flex items-center justify-between`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-            <Icon className="w-6 h-6 text-white" />
+    <div className={`chat-section ${expandedPanel && expandedPanel !== provider ? 'hidden' : ''} ${expandedPanel === provider ? 'expanded' : ''}`}>
+      <div className={`chat-header gradient-${gradient.split(' ')[0].replace('from-', '')}`}>
+        <div className="header-left">
+          <div className="icon-wrapper">
+            <Icon className="header-icon" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">{title}</h2>
-            <p className="text-white/70 text-xs">{messages.length} messages</p>
+            <h2 className="chat-title">{title}</h2>
+            <p className="message-count">{messages.length} messages</p>
           </div>
         </div>
         
-        <div className="flex gap-2">
-          <button
-            onClick={() => togglePanel(provider)}
-            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
-            title={expandedPanel === provider ? "Minimize" : "Maximize"}
-          >
-            {expandedPanel === provider ? (
-              <Minimize2 className="w-4 h-4 text-white" />
-            ) : (
-              <Maximize2 className="w-4 h-4 text-white" />
-            )}
+        <div className="header-actions">
+          <button onClick={() => togglePanel(provider)} className="action-btn" title={expandedPanel === provider ? "Minimize" : "Maximize"}>
+            {expandedPanel === provider ? <Minimize2 className="action-icon" /> : <Maximize2 className="action-icon" />}
           </button>
-          <button
-            onClick={() => downloadChatHistory(provider)}
-            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
-            title="Download Chat"
-          >
-            <Download className="w-4 h-4 text-white" />
+          <button onClick={() => downloadChatHistory(provider)} className="action-btn" title="Download Chat">
+            <Download className="action-icon" />
           </button>
-          <button
-            onClick={() => clearChat(provider)}
-            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
-            title="Clear Chat"
-          >
-            <Trash2 className="w-4 h-4 text-white" />
+          <button onClick={() => clearChat(provider)} className="action-btn" title="Clear Chat">
+            <Trash2 className="action-icon" />
           </button>
         </div>
       </div>
 
-      <div 
-        ref={chatRefs[provider as keyof typeof chatRefs]}
-        className="flex-1 overflow-y-auto p-4 space-y-4 leading-relaxed custom-scrollbar"
-      >
+      <div ref={chatRefs[provider as keyof typeof chatRefs]} className="chat-messages">
         {messages.length === 0 && (
-          <div className="text-center text-white/50 mt-8">
-            <Icon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Waiting for your question...</p>
-            <p className="text-sm mt-2">Ask anything and compare AI responses!</p>
+          <div className="empty-state">
+            <Icon className="empty-icon" />
+            <p className="empty-title">Waiting for your question...</p>
+            <p className="empty-subtitle">Ask anything and compare AI responses!</p>
           </div>
         )}
 
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`flex flex-col gap-2 ${
-              msg.role === "user" ? "items-end" : "items-start"
-            } animate-fadeIn`}
-          >
+          <div key={idx} className={`message ${msg.role === "user" ? "user-message" : "bot-message"}`}>
             {msg.role === "user" ? (
-              <div className="group relative max-w-md">
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm text-white px-4 py-3 rounded-2xl border border-white/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4 text-purple-300" />
-                    <span className="text-xs text-purple-300 font-semibold">You</span>
+              <div className="message-bubble user-bubble">
+                <div className="message-header">
+                  <div className="user-avatar">
+                    <User className="avatar-icon" />
                   </div>
-                  <p className={`${fontSizes[fontSize]} leading-relaxed whitespace-pre-wrap`}>{msg.content}</p>
-                  <span className="text-xs text-white/50 mt-2 block">{msg.timestamp}</span>
+                  <span className="sender-name">You</span>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(msg.content)}
-                  className="absolute top-2 right-2 p-1 bg-white/20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Copy className="w-3 h-3 text-white" />
+                <p className="message-text">{msg.content}</p>
+                <span className="message-time">{msg.timestamp}</span>
+                <button onClick={() => copyToClipboard(msg.content)} className="copy-btn">
+                  <Copy className="copy-icon" />
                 </button>
               </div>
             ) : (
-              <div className="group relative max-w-2xl w-full">
-                <div className="bg-white/10 text-white p-4 rounded-2xl border border-white/20 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Icon className="w-4 h-4 text-white/80" />
-                    <span className="text-xs text-white/80 font-semibold">{title}</span>
+              <div className="message-bubble bot-bubble">
+                <div className="bot-header">
+                  <div className={`bot-avatar gradient-${gradient.split(' ')[0].replace('from-', '')}`}>
+                    <Icon className="bot-icon" />
                   </div>
-                  
-                  <div className={`${fontSizes[fontSize]} whitespace-pre-wrap leading-relaxed space-y-3`}>
-                    {msg.content && msg.content.split('\n\n').map((paragraph, pIdx) => (
-                      <p key={pIdx} className="text-white/90">
-                        {paragraph}
-                      </p>
+                  <span className="bot-name">{title} Response</span>
+                </div>
+                
+                <div className="bot-content">
+                  {msg.content && msg.content.split('\n\n').map((paragraph, pIdx) => (
+                    <p key={pIdx} className="bot-paragraph">{paragraph}</p>
+                  ))}
+                </div>
+
+                {msg.codeBlocks && msg.codeBlocks.length > 0 && (
+                  <div className="code-blocks">
+                    {msg.codeBlocks.map((codeBlock, codeIdx) => (
+                      <div key={codeIdx} className="code-block">
+                        <div className="code-header">
+                          <div className="code-lang">
+                            <Code className="code-icon" />
+                            <span>{codeBlock.language}</span>
+                          </div>
+                          <button onClick={() => copyToClipboard(codeBlock.code)} className="code-copy-btn" title="Copy Code">
+                            <Copy className="code-copy-icon" />
+                          </button>
+                        </div>
+                        <pre className="code-content">{codeBlock.code}</pre>
+                      </div>
                     ))}
                   </div>
-
-                  {msg.codeBlocks && msg.codeBlocks.length > 0 && (
-                    <div className="space-y-3 mt-4">
-                      {msg.codeBlocks.map((codeBlock, codeIdx) => (
-                        <div key={codeIdx} className="bg-black/70 rounded-lg overflow-hidden border border-white/10">
-                          <div className="flex items-center justify-between bg-black/40 px-3 py-2 border-b border-white/10">
-                            <div className="flex items-center gap-2 text-xs text-gray-300">
-                              <Code className="w-3 h-3" />
-                              <span className="font-mono">{codeBlock.language}</span>
-                            </div>
-                            <button
-                              onClick={() => copyToClipboard(codeBlock.code)}
-                              className="p-1 hover:bg-white/10 rounded transition-all"
-                              title="Copy Code"
-                            >
-                              <Copy className="w-3 h-3 text-gray-300" />
-                            </button>
-                          </div>
-                          <pre className={`p-4 text-green-300 font-mono ${fontSizes[fontSize]} overflow-x-auto leading-relaxed`}>
-                            {codeBlock.code}
-                          </pre>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
-                    <span className="text-xs text-white/50">{msg.timestamp}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => copyToClipboard(msg.content)}
-                        className="p-1 hover:bg-white/10 rounded transition-all"
-                        title="Copy Text"
-                      >
-                        <Copy className="w-3 h-3 text-white/70" />
-                      </button>
-                      <button
-                        onClick={() => speakText(msg.content)}
-                        className="p-1 hover:bg-white/10 rounded transition-all"
-                        title="Read Aloud"
-                      >
-                        <Volume2 className="w-3 h-3 text-white/70" />
-                      </button>
-                    </div>
+                )}
+                
+                <div className="bot-footer">
+                  <span className="bot-time">{msg.timestamp}</span>
+                  <div className="bot-actions">
+                    <button onClick={() => copyToClipboard(msg.content)} className="bot-action-btn" title="Copy Text">
+                      <Copy className="bot-action-icon" />
+                    </button>
+                    <button onClick={() => speakText(msg.content)} className="bot-action-btn" title="Read Aloud">
+                      <Volume2 className="bot-action-icon" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -657,24 +612,14 @@ export default function MultiAIDashboard() {
         ))}
 
         {loading && (
-          <div className="flex gap-3 justify-start animate-fadeIn">
-            <div
-              className={`w-8 h-8 rounded-full bg-gradient-to-r ${gradient} flex items-center justify-center`}
-            >
-              <Icon className="w-5 h-5 text-white animate-spin" />
+          <div className="loading-indicator">
+            <div className={`loading-avatar gradient-${gradient.split(' ')[0].replace('from-', '')}`}>
+              <Icon className="loading-icon" />
             </div>
-            <div className="bg-white/10 p-4 rounded-2xl border border-white/20">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                <div
-                  className="w-2 h-2 bg-white rounded-full animate-bounce"
-                  style={{ animationDelay: "0.1s" }}
-                ></div>
-                <div
-                  className="w-2 h-2 bg-white rounded-full animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                ></div>
-              </div>
+            <div className="loading-dots">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
             </div>
           </div>
         )}
@@ -682,186 +627,153 @@ export default function MultiAIDashboard() {
     </div>
   );
 
-  return (
-    <div className={`h-screen ${backgroundThemes[backgroundColor]} flex flex-col relative overflow-hidden transition-all duration-500`}>
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-        <div
-          className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
+  if (!currentUser) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
       </div>
+    );
+  }
 
+  return (
+    <div className={`dashboard bg-${backgroundColor}`}>
       {/* Header */}
-      <div className={`relative z-10 ${darkMode ? 'bg-white/10' : 'bg-white/80'} backdrop-blur-xl border-b ${darkMode ? 'border-white/20' : 'border-gray-300'} p-4 shadow-lg`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-              <Sparkles className="w-7 h-7 text-white" />
+      <div className="main-header">
+        <div className="header-content">
+          <div className="logo-section">
+            <div className="logo-icon">
+              <Sparkles className="sparkle-icon" />
             </div>
             <div>
-              <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Multi-AI Dashboard
-              </h1>
-              <p className={`${darkMode ? 'text-purple-200' : 'text-purple-600'} text-sm`}>
-                Compare and visualize AI responses in real-time
-              </p>
+              <h1 className="main-title">TRIO AI</h1>
+              <p className="main-subtitle">Compare responses from ChatGPT, Gemini & Perplexity</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowChatHistory(!showChatHistory)}
-              className={`p-3 ${darkMode ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-200 hover:bg-gray-300'} rounded-full transition-all`}
-              title="Chat History"
-            >
-              <History className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
-            </button>
+          <div className="header-controls">
+            <div className="header-buttons">
+              <button onClick={() => setShowChatHistory(!showChatHistory)} className="header-btn history-btn" title="Chat History">
+                <History className="btn-icon" />
+              </button>
+              <button onClick={startNewChat} className="header-btn new-chat-btn" title="New Chat">
+                <Plus className="btn-icon" />
+              </button>
+              <button onClick={() => setShowSettings(!showSettings)} className="header-btn settings-btn" title="Settings">
+                <Settings className="btn-icon" />
+              </button>
+            </div>
 
-            <button
-              onClick={startNewChat}
-              className={`p-3 ${darkMode ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-200 hover:bg-gray-300'} rounded-full transition-all`}
-              title="New Chat"
-            >
-              <MessageSquare className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
-            </button>
+            {/* Profile and Logout Section */}
+            <div className="profile-logout-section" ref={profileRef}>
+              <div 
+                className="profile-icon"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                title={currentUser.name}
+              >
+                {currentUser.name.charAt(0).toUpperCase()}
+              </div>
+              
+              {showProfileMenu && (
+                <div className="profile-menu">
+                  <div className="profile-info">
+                    <div className="profile-avatar">
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="profile-details">
+                      <p className="profile-name">{currentUser.name}</p>
+                      <p className="profile-email">{currentUser.email}</p>
+                    </div>
+                  </div>
+                  <div className="profile-menu-divider"></div>
+                  <button 
+                    onClick={handleLogout}
+                    className="profile-menu-item logout-menu-item"
+                  >
+                    <LogOut className="menu-item-icon" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
 
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-3 ${darkMode ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-200 hover:bg-gray-300'} rounded-full transition-all`}
-              title="Toggle Theme"
-            >
-              {darkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-gray-900" />}
-            </button>
-
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-3 ${darkMode ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-200 hover:bg-gray-300'} rounded-full transition-all`}
-              title="Settings"
-            >
-              <Settings className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-full transition-all shadow-lg hover:scale-105 transform"
-            >
-              <LogOut className="w-4 h-4" /> Logout
-            </button>
+              <button onClick={handleLogout} className="logout-btn">
+                <LogOut className="btn-icon" /> Logout
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className={`mt-4 p-6 ${darkMode ? 'bg-white/10' : 'bg-white/90'} rounded-xl border ${darkMode ? 'border-white/20' : 'border-gray-300'} backdrop-blur-sm animate-fadeIn`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Settings & Preferences</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                className={`p-1 ${darkMode ? 'hover:bg-white/20' : 'hover:bg-gray-200'} rounded`}
-              >
-                <Minimize2 className={`w-4 h-4 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
+          <div className="settings-panel">
+            <div className="settings-header">
+              <h3 className="settings-title">
+                <Settings className="settings-icon" />
+                Settings & Preferences
+              </h3>
+              <button onClick={() => setShowSettings(false)} className="close-btn">
+                <X className="close-icon" />
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Appearance Settings */}
-              <div className="space-y-4">
-                <h4 className={`font-medium flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  <Palette className="w-4 h-4" /> Appearance
+            <div className="settings-grid">
+              <div className="settings-section">
+                <h4 className="section-title">
+                  <Palette className="section-icon" /> Appearance
                 </h4>
                 
-                <div>
-                  <label className={`block text-sm mb-2 ${darkMode ? 'text-white/80' : 'text-gray-700'}`}>
-                    Background Theme
-                  </label>
-                  <select
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                    className={`w-full px-3 py-2 ${darkMode ? 'bg-white/20 text-white' : 'bg-white text-gray-900'} rounded-lg border ${darkMode ? 'border-white/20' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
-                    <option value="default">Default Purple</option>
-                    <option value="professional">Professional Blue</option>
+                <div className="form-group">
+                  <label className="form-label">Background Theme</label>
+                  <select value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="form-select">
+                    <option value="default">Default Blue</option>
+                    <option value="professional">Professional</option>
                     <option value="nature">Nature Green</option>
                     <option value="ocean">Ocean Blue</option>
                     <option value="sunset">Sunset Orange</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className={`block text-sm mb-2 ${darkMode ? 'text-white/80' : 'text-gray-700'}`}>
-                    Layout
-                  </label>
-                  <select
-                    value={layout}
-                    onChange={(e) => setLayout(e.target.value)}
-                    className={`w-full px-3 py-2 ${darkMode ? 'bg-white/20 text-white' : 'bg-white text-gray-900'} rounded-lg border ${darkMode ? 'border-white/20' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
+                <div className="form-group">
+                  <label className="form-label">Layout Style</label>
+                  <select value={layout} onChange={(e) => setLayout(e.target.value)} className="form-select">
                     <option value="grid">Grid Layout</option>
                     <option value="vertical">Vertical Stack</option>
                   </select>
                 </div>
               </div>
 
-              {/* Text Settings */}
-              <div className="space-y-4">
-                <h4 className={`font-medium flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  <Type className="w-4 h-4" /> Text & Display
+              <div className="settings-section">
+                <h4 className="section-title">
+                  <Type className="section-icon" /> Text & Display
                 </h4>
                 
-                <div>
-                  <label className={`block text-sm mb-2 ${darkMode ? 'text-white/80' : 'text-gray-700'}`}>
-                    Font Size
-                  </label>
-                  <select
-                    value={fontSize}
-                    onChange={(e) => setFontSize(e.target.value)}
-                    className={`w-full px-3 py-2 ${darkMode ? 'bg-white/20 text-white' : 'bg-white text-gray-900'} rounded-lg border ${darkMode ? 'border-white/20' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
+                <div className="form-group">
+                  <label className="form-label">Font Size</label>
+                  <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="form-select">
                     <option value="small">Small</option>
                     <option value="medium">Medium</option>
                     <option value="large">Large</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className={`block text-sm mb-2 ${darkMode ? 'text-white/80' : 'text-gray-700'}`}>
-                    Auto-save Chats
+                <div className="auto-save-info">
+                  <label className="checkbox-label">
+                    <input type="checkbox" checked={true} readOnly className="checkbox-input" />
+                    Auto-save enabled (every 2s)
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      readOnly
-                      className="w-4 h-4 text-purple-500 bg-white/20 border-white/20 rounded focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${darkMode ? 'text-white/70' : 'text-gray-600'}`}>Enabled (every 2 seconds)</span>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Data Management */}
-            <div className="mt-6 pt-6 border-t border-white/20">
-              <h4 className={`font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Data Management</h4>
-              <div className="flex gap-3">
-                <button
-                  onClick={exportAllChats}
-                  className="px-4 py-2 bg-green-500/20 text-green-300 hover:bg-green-500/30 rounded-lg transition-all flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
+            <div className="data-management">
+              <h4 className="section-title">Data Management</h4>
+              <div className="action-buttons">
+                <button onClick={exportAllChats} className="export-btn">
+                  <Download className="btn-icon" />
                   Export All Chats
                 </button>
-                <button
-                  onClick={clearAllHistory}
-                  className="px-4 py-2 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg transition-all flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
+                <button onClick={clearAllHistory} className="clear-btn">
+                  <Trash2 className="btn-icon" />
                   Clear All History
                 </button>
               </div>
@@ -869,174 +781,84 @@ export default function MultiAIDashboard() {
           </div>
         )}
 
-        {/* Enhanced Chat History Panel */}
+        {/* Chat History Panel */}
         {showChatHistory && (
-          <div className={`mt-4 ${darkMode ? 'bg-white/10' : 'bg-white/90'} rounded-xl border ${darkMode ? 'border-white/20' : 'border-gray-300'} backdrop-blur-sm animate-fadeIn max-h-96 overflow-hidden flex flex-col`}>
-            <div className="p-6 border-b border-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Chat History ({chatSessions.length} sessions)
-                </h3>
-                <div className="flex gap-2">
-                  {chatSessions.length > 0 && (
-                    <button
-                      onClick={exportAllChats}
-                      className="px-3 py-1 text-xs bg-green-500/20 text-green-300 hover:bg-green-500/30 rounded-lg transition-all"
-                    >
-                      Export
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowChatHistory(false)}
-                    className={`p-1 ${darkMode ? 'hover:bg-white/20' : 'hover:bg-gray-200'} rounded`}
-                  >
-                    <Minimize2 className={`w-4 h-4 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className={`p-3 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                  <p className={`text-sm ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>Total Chats</p>
-                  <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{chatSessions.length}</p>
-                </div>
-                <div className={`p-3 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                  <p className={`text-sm ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>Total Messages</p>
-                  <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{sessionStats.totalMessages}</p>
-                </div>
-                <div className={`p-3 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                  <p className={`text-sm ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>Categories</p>
-                  <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{Object.keys(sessionStats.categoriesCount).length}</p>
-                </div>
-                <div className={`p-3 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                  <p className={`text-sm ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>Active</p>
-                  <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{currentSessionId ? 'Yes' : 'No'}</p>
-                </div>
-              </div>
-
-              {/* Search and Filter */}
-              <div className="flex gap-3 mb-4">
-                <div className="flex-1 relative">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-white/50' : 'text-gray-500'}`} />
-                  <input
-                    type="text"
-                    placeholder="Search chats..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2 ${darkMode ? 'bg-white/10 text-white placeholder-white/50' : 'bg-white text-gray-900 placeholder-gray-500'} rounded-lg border ${darkMode ? 'border-white/20' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                    >
-                      <X className={`w-4 h-4 ${darkMode ? 'text-white/50' : 'text-gray-500'}`} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {categories.map(category => (
-                  <button
-                    key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
-                    className={`px-3 py-1 text-sm rounded-full whitespace-nowrap transition-all ${
-                      activeCategory === category.id
-                        ? 'bg-purple-500 text-white'
-                        : darkMode
-                          ? 'bg-white/10 text-white/70 hover:bg-white/20'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {category.name}
-                    {sessionStats.categoriesCount[category.id] && (
-                      <span className="ml-1 text-xs opacity-70">
-                        ({sessionStats.categoriesCount[category.id]})
-                      </span>
-                    )}
-                  </button>
-                ))}
+          <div className="history-panel">
+            <div className="history-header">
+              <h3 className="history-title">📚 Chat History ({chatSessions.length})</h3>
+              <div className="history-actions">
+                {chatSessions.length > 0 && (
+                  <button onClick={exportAllChats} className="export-small-btn">Export</button>
+                )}
+                <button onClick={() => setShowChatHistory(false)} className="close-btn">
+                  <X className="close-icon" />
+                </button>
               </div>
             </div>
+
+            <div className="search-wrapper">
+              <div className="search-icon-wrapper">
+                <Search className="search-icon" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search your conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="clear-search-btn">
+                  <X className="clear-search-icon" />
+                </button>
+              )}
+            </div>
+
+            <div className="categories">
+              {categories.map(category => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`category-btn ${activeCategory === category.id ? 'active' : ''}`}
+                >
+                  {category.icon} {category.name}
+                </button>
+              ))}
+            </div>
             
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="sessions-list">
               {filteredSessions.length === 0 ? (
-                <div className="text-center py-8">
-                  <History className={`w-12 h-12 mx-auto mb-3 ${darkMode ? 'text-white/30' : 'text-gray-400'}`} />
-                  <p className={`${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                <div className="no-sessions">
+                  <History className="no-sessions-icon" />
+                  <p className="no-sessions-text">
                     {chatSessions.length === 0 ? 'No chat history yet' : 'No matching chats found'}
-                  </p>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-white/40' : 'text-gray-400'}`}>
-                    {chatSessions.length === 0 ? 'Start a conversation to see your history here' : 'Try changing your search or filter'}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="sessions">
                   {filteredSessions.slice().reverse().map((session) => (
                     <div
                       key={session.id}
                       onClick={() => loadSession(session.id)}
-                      className={`p-4 rounded-xl cursor-pointer transition-all border ${
-                        currentSessionId === session.id 
-                          ? 'bg-purple-500/30 border-purple-500/50' 
-                          : darkMode 
-                            ? 'bg-white/5 hover:bg-white/10 border-white/10' 
-                            : 'bg-gray-100 hover:bg-gray-200 border-gray-300'
-                      }`}
+                      className={`session-item ${currentSessionId === session.id ? 'active' : ''}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className={`font-medium truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {session.title}
-                            </p>
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              session.category === 'programming' ? 'bg-blue-500/20 text-blue-300' :
-                              session.category === 'research' ? 'bg-green-500/20 text-green-300' :
-                              session.category === 'creative' ? 'bg-purple-500/20 text-purple-300' :
-                              session.category === 'business' ? 'bg-yellow-500/20 text-yellow-300' :
-                              session.category === 'education' ? 'bg-red-500/20 text-red-300' :
-                              'bg-gray-500/20 text-gray-300'
-                            }`}>
-                              {session.category}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 mt-1">
-                            <p className={`text-xs ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>
-                              {new Date(session.timestamp).toLocaleString()}
-                            </p>
-                            <p className={`text-xs ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>
-                              {session.messageCount} messages
-                            </p>
-                            {(session.tags && session.tags.length > 0) ? (
-                              <div className="flex gap-1">
-                                {session.tags.slice(0, 2).map(tag => (
-                                  <span key={tag} className={`px-1 py-0.5 text-xs rounded ${
-                                    darkMode ? 'bg-white/10 text-white/70' : 'bg-gray-200 text-gray-600'
-                                  }`}>
-                                    #{tag}
-                                  </span>
-                                ))}
-                                {session.tags.length > 2 && (
-                                  <span className={`px-1 py-0.5 text-xs ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
-                                    +{session.tags.length - 2}
-                                  </span>
-                                )}
-                              </div>
-                            ) : null}
-                          </div>
+                      <div className="session-content">
+                        <p className="session-title">
+                          <ChevronRight className="chevron-icon" />
+                          {session.title}
+                        </p>
+                        <div className="session-meta">
+                          <p className="session-date">
+                            {new Date(session.timestamp).toLocaleDateString()}
+                          </p>
+                          <span className="session-count">
+                            {session.messageCount} msgs
+                          </span>
                         </div>
-                        <button
-                          onClick={(e) => deleteSession(session.id, e)}
-                          className="p-2 hover:bg-red-500/20 rounded-lg transition-all ml-2"
-                          title="Delete Session"
-                        >
-                          <Trash2 className={`w-4 h-4 ${darkMode ? 'text-white/60' : 'text-gray-600'}`} />
-                        </button>
                       </div>
+                      <button onClick={(e) => deleteSession(session.id, e)} className="delete-session-btn">
+                        <Trash2 className="delete-icon" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -1047,69 +869,39 @@ export default function MultiAIDashboard() {
       </div>
 
       {/* Chat Panels */}
-      <div className="flex-1 relative z-10 p-4 overflow-hidden">
-        <div className={`max-w-7xl mx-auto h-full gap-4 ${
-          expandedPanel ? 'grid grid-cols-3' : 
-          layout === 'vertical' ? 'flex flex-col' : 'flex'
-        }`}>
-          <ChatSection
-            title="Gemini"
-            messages={messages.gemini}
-            loading={loading.gemini}
-            gradient="from-purple-500 to-pink-500"
-            icon={Sparkles}
-            provider="gemini"
-          />
-          <ChatSection
-            title="Perplexity"
-            messages={messages.perplexity}
-            loading={loading.perplexity}
-            gradient="from-blue-500 to-cyan-500"
-            icon={Zap}
-            provider="perplexity"
-          />
-          <ChatSection
-            title="ChatGPT"
-            messages={messages.chatgpt}
-            loading={loading.chatgpt}
-            gradient="from-green-500 to-emerald-500"
-            icon={Brain}
-            provider="chatgpt"
-          />
-        </div>
+      <div className={`chat-container layout-${layout}`}>
+        <ChatSection
+          title="Gemini"
+          messages={messages.gemini}
+          loading={loading.gemini}
+          gradient="from-purple-500 to-pink-500"
+          icon={Sparkles}
+          provider="gemini"
+        />
+        <ChatSection
+          title="Perplexity"
+          messages={messages.perplexity}
+          loading={loading.perplexity}
+          gradient="from-blue-500 to-cyan-500"
+          icon={Zap}
+          provider="perplexity"
+        />
+        <ChatSection
+          title="ChatGPT"
+          messages={messages.chatgpt}
+          loading={loading.chatgpt}
+          gradient="from-green-500 to-emerald-500"
+          icon={Brain}
+          provider="chatgpt"
+        />
       </div>
 
-      {/* Input */}
-      <div className={`relative z-10 ${darkMode ? 'bg-white/10' : 'bg-white/80'} backdrop-blur-xl border-t ${darkMode ? 'border-white/20' : 'border-gray-300'} p-4 shadow-lg`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              {currentSessionId && (
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700'
-                }`}>
-                  💾 Auto-saving...
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
-                {chatSessions.length} saved chats
-              </span>
-            </div>
-          </div>
-
-          <div className={`flex gap-3 ${darkMode ? 'bg-white/20' : 'bg-white'} backdrop-blur-sm rounded-full p-2 shadow-xl border ${darkMode ? 'border-white/20' : 'border-gray-300'}`}>
-            <button
-              onClick={toggleRecording}
-              className={`p-3 ${isRecording ? 'bg-red-500' : darkMode ? 'bg-white/20' : 'bg-gray-200'} hover:bg-opacity-80 rounded-full transition-all`}
-              title="Voice Input"
-            >
-              {isRecording ? (
-                <StopCircle className="w-5 h-5 text-white animate-pulse" />
-              ) : (
-                <Mic className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-gray-700'}`} />
-              )}
+      {/* Input Section */}
+      <div className="input-section">
+        <div className="input-container">
+          <div className="input-wrapper">
+            <button onClick={toggleRecording} className={`voice-btn ${isRecording ? 'recording' : ''}`} title="Voice Input">
+              {isRecording ? <StopCircle className="voice-icon pulse" /> : <Mic className="voice-icon" />}
             </button>
             
             <input
@@ -1117,65 +909,22 @@ export default function MultiAIDashboard() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask all AIs at once... (Press Enter to send)"
-              className={`flex-1 px-6 py-3 bg-transparent ${darkMode ? 'text-white placeholder-purple-200' : 'text-gray-900 placeholder-gray-500'} focus:outline-none ${fontSizes[fontSize]}`}
+              placeholder="Ask all AIs at once"
+              className="main-input"
               disabled={loading.gemini || loading.perplexity || loading.chatgpt}
             />
             
             <button
               onClick={sendToAll}
-              disabled={
-                loading.gemini ||
-                loading.perplexity ||
-                loading.chatgpt ||
-                !input.trim()
-              }
-              className="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white px-6 py-3 rounded-full hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105 transform flex items-center gap-2"
+              disabled={loading.gemini || loading.perplexity || loading.chatgpt || !input.trim()}
+              className="send-btn"
             >
-              <Send className="w-5 h-5" />
-              <span className="font-semibold">Send to All</span>
+              <Send className="send-icon" />
+              Send
             </button>
           </div>
-          <p className={`text-center ${darkMode ? 'text-purple-200' : 'text-purple-600'} text-xs mt-2`}>
-            ✨ Compare AI responses • Auto-saves history • Multiple themes • Clean formatting
-          </p>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.5);
-          border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.7);
-        }
-      `}</style>
     </div>
   );
 }
