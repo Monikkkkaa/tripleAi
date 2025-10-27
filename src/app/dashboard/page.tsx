@@ -11,14 +11,14 @@ export default function DashboardPage() {
   useEffect(() => {
     // Check if user is logged in
     const checkAuth = () => {
-      const loggedIn = localStorage.getItem("loggedIn");
-      
-      if (loggedIn !== "true") {
+      const loggedIn = localStorage.getItem("authToken");
+
+      if (loggedIn) {
         // User not logged in, redirect to login page
-        router.replace("/login");
+        setIsAuthenticated(true);
       } else {
         // User is authenticated
-        setIsAuthenticated(true);
+        router.replace("/login");
       }
       setIsLoading(false);
     };

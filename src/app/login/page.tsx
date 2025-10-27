@@ -15,7 +15,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-    
+
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required!");
       setLoading(false);
@@ -38,7 +38,9 @@ export default function LoginPage() {
           name: data.user.user_metadata?.name || email.split('@')[0],
           loginTime: new Date().toISOString()
         };
-        
+
+
+        localStorage.setItem("authToken", JSON.stringify(data.session.access_token));
         localStorage.setItem("currentUser", JSON.stringify(userData));
         router.push("/dashboard");
       }
@@ -64,7 +66,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 text-gray-900 overflow-hidden">
-      
+
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -85,7 +87,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between">
 
             {/* Logo */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
@@ -107,13 +109,13 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
-              <button 
+              <button
                 onClick={() => router.push("/login")}
                 className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-300"
               >
                 Login
               </button>
-              <button 
+              <button
                 onClick={() => router.push("/signup")}
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
               >
@@ -130,8 +132,8 @@ export default function LoginPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
 
           {/* Hero */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }} 
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
@@ -154,8 +156,8 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap gap-3">
               {aiPlatforms.map((platform, idx) => (
-                <motion.div 
-                  key={idx} 
+                <motion.div
+                  key={idx}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
@@ -171,11 +173,11 @@ export default function LoginPage() {
             <div className="space-y-3 pt-4">
               {[
                 "✓ Resume your conversations",
-                "✓ Access saved chat history", 
+                "✓ Access saved chat history",
                 "✓ Personalized AI experience",
                 "✓ Compare multiple AI models"
               ].map((feature, idx) => (
-                <motion.div 
+                <motion.div
                   key={idx}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -190,7 +192,7 @@ export default function LoginPage() {
           </motion.div>
 
           {/* Login Form */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             className="w-full max-w-md mx-auto"
@@ -242,7 +244,7 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-red-50 border border-red-200 rounded-xl"
