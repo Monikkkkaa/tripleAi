@@ -267,7 +267,7 @@ export default function LoginPage() {
                     </div>
                   ) : (
                     <>
-                      <span>Sign In</span>
+                      <span>Login</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

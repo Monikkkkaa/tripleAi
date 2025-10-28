@@ -1,35 +1,96 @@
 "use client";
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Brain, Zap, Bot, MessageSquare, Shield, Rocket } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Sparkles, Brain, Zap, Bot, MessageSquare, Shield, Rocket, ChevronRight, Check, Star, Users, TrendingUp, Github, Twitter, Linkedin, Mail, ArrowRight, Globe, Heart } from "lucide-react";
 
 export default function LandingPage() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const aiPlatforms = [
-    { name: "Gemini", color: "from-blue-400 to-indigo-400", icon: Brain, emoji: "✨" },
-    { name: "ChatGPT", color: "from-emerald-400 to-teal-400", icon: MessageSquare, emoji: "🤖" },
-    { name: "Perplexity", color: "from-indigo-400 to-purple-400", icon: Sparkles, emoji: "🔍" }
+    { name: "Gemini", color: "from-blue-400 to-indigo-400", icon: Brain, emoji: "✨", desc: "Google's latest AI powerhouse" },
+    { name: "ChatGPT", color: "from-emerald-400 to-teal-400", icon: MessageSquare, emoji: "🤖", desc: "OpenAI's conversational genius" },
+    { name: "Perplexity", color: "from-indigo-400 to-purple-400", icon: Sparkles, emoji: "🔍", desc: "Research-focused intelligence" }
   ];
 
   const features = [
     {
       icon: Zap,
       title: "Lightning Fast",
-      description: "Get instant responses from multiple AI models simultaneously",
-      color: "text-yellow-500"
+      description: "Get instant responses from multiple AI models simultaneously with zero latency",
+      color: "text-yellow-500",
+      gradient: "from-yellow-400 to-orange-400"
     },
     {
       icon: Shield,
       title: "Secure & Private",
-      description: "Your conversations are encrypted and never stored",
-      color: "text-indigo-500"
+      description: "Enterprise-grade encryption ensures your conversations remain confidential",
+      color: "text-indigo-500",
+      gradient: "from-indigo-400 to-purple-400"
     },
     {
       icon: Rocket,
-      title: "All in One Dashboard",
-      description: "Access ChatGPT, Gemini, and Perplexity in a single interface",
-      color: "text-blue-500"
+      title: "All-in-One Dashboard",
+      description: "Seamlessly switch between ChatGPT, Gemini, and Perplexity without leaving the app",
+      color: "text-blue-500",
+      gradient: "from-blue-400 to-cyan-400"
+    },
+    {
+      icon: Users,
+      title: "Team Collaboration",
+      description: "Share conversations and insights with your team in real-time",
+      color: "text-green-500",
+      gradient: "from-green-400 to-emerald-400"
+    },
+    {
+      icon: TrendingUp,
+      title: "Smart Analytics",
+      description: "Track usage patterns and optimize your AI workflow with detailed insights",
+      color: "text-pink-500",
+      gradient: "from-pink-400 to-rose-400"
+    },
+    {
+      icon: Star,
+      title: "Premium Support",
+      description: "24/7 dedicated support to help you maximize your AI experience",
+      color: "text-purple-500",
+      gradient: "from-purple-400 to-fuchsia-400"
+    }
+  ];
+
+  const stats = [
+    { value: "100K+", label: "Active Users" },
+    { value: "5M+", label: "Conversations" },
+    { value: "99.9%", label: "Uptime" },
+    { value: "4.9/5", label: "User Rating" }
+  ];
+
+  const pricingPlans = [
+    {
+      name: "Free",
+      price: "$0",
+      period: "/month",
+      features: ["50 messages/day", "3 AI models", "Basic support", "1 user"],
+      popular: false
+    },
+    {
+      name: "Pro",
+      price: "$19",
+      period: "/month",
+      features: ["Unlimited messages", "3 AI models", "Priority support", "5 users", "Advanced analytics", "Custom integrations"],
+      popular: true
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      features: ["Unlimited everything", "Dedicated AI models", "24/7 support", "Unlimited users", "Custom deployment", "SLA guarantee"],
+      popular: false
     }
   ];
 
@@ -37,247 +98,329 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 text-gray-900 overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            opacity: [0.1, 0.15, 0.1]
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                             radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%)`,
+            transform: `translateY(${scrollY * 0.3}px)`
           }}
-          transition={{ duration: 15, repeat: Infinity }}
-          className="absolute -top-40 -right-40 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl"
         />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            rotate: [90, 0, 90],
-            opacity: [0.1, 0.15, 0.1]
-          }}
-          transition={{ duration: 15, repeat: Infinity, delay: 2 }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.08, 0.12, 0.08]
-          }}
-          transition={{ duration: 12, repeat: Infinity }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl"
-        />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/40 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200/40 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-200/30 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       {/* Navbar */}
-      <nav className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3"
-            >
+            <div className="flex items-center gap-3 group cursor-pointer">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl blur-md opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
                   <MessageSquare className="w-5 h-5 text-white" />
                 </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  TRIO AI
-                </h1>
-              </div>
-            </motion.div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                TRIO AI
+              </h1>
+            </div>
 
-            {/* Auth Buttons */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3"
-            >
+
+
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => (window.location.href = "/login")}
-                className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-300"
+                className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Login
               </button>
               <button
                 onClick={() => (window.location.href = "/signup")}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                className="relative group px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 shadow-lg hover:shadow-blue-500/50"
               >
-                Sign Up
+                Get Started
               </button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center">
-
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 bg-blue-100 border border-blue-200 rounded-full px-5 py-2 mb-8"
-          >
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-blue-700 font-medium">Multiple AI Models in One Dashboard</span>
-          </motion.div>
-
-          {/* Main Heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-6xl md:text-7xl font-bold mb-6 leading-tight"
-          >
-            <span className="text-gray-900">TRIO AI</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed"
-          >
-            Experience the future of AI interaction. Get answers from{" "}
-            <span className="font-semibold text-blue-600">ChatGPT</span>,{" "}
-            <span className="font-semibold text-indigo-600">Gemini</span>, and{" "}
-            <span className="font-semibold text-purple-600">Perplexity</span>{" "}
-            in one unified, beautiful dashboard.
-          </motion.p>
-
-          {/* Chatbot Illustration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mb-20 relative max-w-4xl mx-auto"
-          >
-            <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-10 left-10 w-32 h-32 bg-blue-300/30 rounded-full blur-2xl"></div>
-              <div className="absolute bottom-10 right-10 w-40 h-40 bg-indigo-300/30 rounded-full blur-2xl"></div>
-
-              <div className="relative flex items-center justify-center gap-8">
-                {/* Laptop */}
-                <div className="relative">
-                  <div className="w-80 h-48 bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border-8 border-gray-700">
-                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 h-full flex items-center justify-center">
-                      <motion.div
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        <Brain className="w-20 h-20 text-white" />
-                      </motion.div>
-                    </div>
-                  </div>
-                  <div className="w-96 h-4 bg-gray-700 rounded-b-xl mx-auto -mt-1"></div>
-                </div>
-
-                {/* Robot */}
-                <motion.div
-                  animate={{
-                    y: [0, -20, 0],
-                    rotate: [0, 5, 0, -5, 0]
-                  }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                  className="absolute -top-16 right-20"
-                >
-                  <div className="relative">
-                    <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl shadow-2xl flex items-center justify-center">
-                      <Bot className="w-20 h-20 text-white" />
-                    </div>
-                    <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute -top-8 -left-12 bg-white rounded-2xl px-4 py-2 shadow-lg"
-                    >
-                      <span className="text-2xl">💬</span>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </div>
+      <div className="relative pt-20 pb-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-blue-100/80 border border-blue-200 rounded-full px-5 py-2 mb-8 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span className="text-sm text-blue-700 font-medium">Powered by 3 Leading AI Models</span>
             </div>
-          </motion.div>
 
-          {/* AI Platform Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-            {aiPlatforms.map((platform, index) => (
-              <motion.div
-                key={platform.name}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                onHoverStart={() => setHoveredCard(index)}
-                onHoverEnd={() => setHoveredCard(null)}
-                whileHover={{ scale: 1.05, y: -5 }}
+            <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                The Future of AI
+              </span>
+              <br />
+              <span className="text-gray-900">In One Place</span>
+            </h1>
+
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
+              Stop switching between platforms. Access{" "}
+              <span className="text-emerald-600 font-semibold">ChatGPT</span>,{" "}
+              <span className="text-blue-600 font-semibold">Gemini</span>, and{" "}
+              <span className="text-purple-600 font-semibold">Perplexity</span>{" "}
+              in one beautiful, unified dashboard.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+              <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl font-semibold text-lg text-white transition-all hover:scale-105 shadow-xl hover:shadow-blue-500/50 flex items-center gap-2">
+                Start Free Trial
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button className="px-8 py-4 bg-white border-2 border-gray-300 rounded-xl font-semibold text-lg hover:bg-gray-50 hover:border-blue-300 transition-all flex items-center gap-2 shadow-md">
+                Watch Demo
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
+              {stats.map((stat, i) => (
+                <div key={i} className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 hover:bg-white hover:border-blue-300 hover:shadow-xl transition-all">
+                    <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                      {stat.value}
+                    </div>
+                    <div className="text-gray-600 text-sm font-medium">{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* AI Platform Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+              {aiPlatforms.map((platform, index) => (
+                <div
+                  key={platform.name}
+                  onMouseEnter={() => setHoveredCard(index)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  className="relative group cursor-pointer"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r ${platform.color} rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500`} />
+                  <div className="relative bg-white/90 backdrop-blur-sm border border-gray-200 rounded-3xl p-8 hover:bg-white hover:border-blue-300 hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-2">
+                    <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                      {platform.emoji}
+                    </div>
+                    <h3 className={`text-2xl font-bold mb-2 bg-gradient-to-r ${platform.color} bg-clip-text text-transparent`}>
+                      {platform.name}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4">{platform.desc}</p>
+                    <div className="flex items-center gap-2 text-blue-600 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                      Learn more <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div id="features" className="relative py-20 px-6 bg-gradient-to-b from-white to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Powerful Features
+              </span>
+            </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Everything you need to supercharge your AI workflow
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div
+                key={feature.title}
                 className="relative group"
               >
-                <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 hover:border-blue-300 transition-all shadow-lg hover:shadow-xl">
-                  <div className={`text-5xl mb-4 transform group-hover:scale-110 transition-transform`}>
-                    {platform.emoji}
+                <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+                <div className="relative bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 hover:bg-white hover:shadow-2xl hover:border-blue-300 transition-all duration-300 h-full">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${feature.gradient} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
+                    <feature.icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className={`text-xl font-bold mb-2 bg-gradient-to-r ${platform.color} bg-clip-text text-transparent`}>
-                    {platform.name}
-                  </h3>
-                  <p className="text-gray-600 text-sm">Advanced AI model</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
+        </div>
+      </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-6 hover:bg-white/80 hover:border-blue-200 transition-all shadow-md hover:shadow-lg"
-              >
-                <feature.icon className={`w-10 h-10 mb-4 mx-auto ${feature.color}`} />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
-              </motion.div>
-            ))}
+      {/* Pricing Section */}
+      <div id="pricing" className="relative py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Simple Pricing
+              </span>
+            </h2>
+            <p className="text-gray-600 text-lg">Choose the plan that fits your needs</p>
           </div>
 
-          {/* Carousel Dots */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.1 }}
-            className="flex justify-center gap-2 mb-8"
-          >
-            {[0, 1, 2, 3, 4].map((dot) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan, index) => (
               <div
-                key={dot}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  dot === 0 ? "bg-blue-600 w-8" : "bg-gray-300"
-                }`}
-              ></div>
+                key={plan.name}
+                className={`relative group ${plan.popular ? 'md:-translate-y-4' : ''}`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                    Most Popular
+                  </div>
+                )}
+                <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${plan.popular ? 'opacity-50' : ''}`} />
+                <div className={`relative bg-white/90 backdrop-blur-sm border rounded-3xl p-8 hover:bg-white hover:shadow-2xl transition-all h-full flex flex-col ${plan.popular ? 'border-blue-500 shadow-xl' : 'border-gray-200'}`}>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <div className="mb-6">
+                    <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-gray-600">{plan.period}</span>
+                  </div>
+                  <ul className="space-y-4 mb-8 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-3 text-gray-700">
+                        <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.popular
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:shadow-lg hover:shadow-blue-500/50 hover:scale-105'
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}>
+                    Get Started
+                  </button>
+                </div>
+              </div>
             ))}
-          </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="relative py-20 px-6 bg-gradient-to-b from-blue-50 to-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl blur-2xl opacity-20" />
+            <div className="relative bg-gradient-to-r from-blue-500/10 to-indigo-500/10 backdrop-blur-sm border border-blue-300 rounded-3xl p-12 text-center">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+                Ready to Transform Your AI Experience?
+              </h2>
+              <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
+                Join thousands of users who are already experiencing the future of AI
+              </p>
+              <button className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold text-lg hover:scale-105 transition-all shadow-xl hover:shadow-blue-500/50 flex items-center gap-2 mx-auto">
+                Start Your Free Trial
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="relative z-10 bg-gray-900 text-white py-4"
-      >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between text-sm">
-            <p className="text-gray-400">© 2024 TRIO AI. All rights reserved.</p>
-            <p className="text-gray-400">Powered by AI • Secure • Fast</p>
+      <footer className="relative border-t border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
+                  <MessageSquare className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  TRIO AI
+                </h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                The ultimate AI platform bringing together ChatGPT, Gemini, and Perplexity in one seamless experience.
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { Icon: Twitter, href: "#" },
+                  { Icon: Github, href: "#" },
+                  { Icon: Linkedin, href: "#" },
+                  { Icon: Mail, href: "#" }
+                ].map(({ Icon, href }, i) => (
+                  <a
+                    key={i}
+                    href={href}
+                    className="w-10 h-10 bg-gray-100 hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:scale-110 group"
+                  >
+                    <Icon className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Product</h4>
+              <ul className="space-y-3">
+                {['Features', 'Pricing', 'API', 'Integrations', 'Changelog', 'Roadmap'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors text-sm">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Company</h4>
+              <ul className="space-y-3">
+                {['About Us', 'Blog', 'Careers', 'Press Kit', 'Contact', 'Partners'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors text-sm">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
+              <ul className="space-y-3">
+                {['Documentation', 'Help Center', 'Community', 'Status', 'Security', 'Legal'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors text-sm">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 pt-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-gray-600 text-sm flex items-center gap-2">
+                © 2024 TRIO AI. Made with <Heart className="w-4 h-4 text-red-500 fill-red-500" /> for AI enthusiasts
+              </p>
+              <div className="flex items-center gap-6 text-sm">
+                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Privacy Policy</a>
+                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Terms of Service</a>
+                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Cookie Policy</a>
+              </div>
+            </div>
           </div>
         </div>
-      </motion.div>
+      </footer>
     </div>
   );
 }
