@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Sparkles, Brain, Zap, Bot, MessageSquare, Shield, Rocket, ChevronRight, Check, Star, Users, TrendingUp, Github, Twitter, Linkedin, Mail, ArrowRight, Globe, Heart } from "lucide-react";
 
 export default function LandingPage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
